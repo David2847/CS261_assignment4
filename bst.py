@@ -1,9 +1,9 @@
-# Name:
-# OSU Email:
+# Name: David Jantz
+# OSU Email: jantzd@oregonstate.edu
 # Course: CS261 - Data Structures
-# Assignment:
-# Due Date:
-# Description:
+# Assignment: Assignment 4, BST/AVL Tree Implementation
+# Due Date: 11/18/2024
+# Description: Implementation of all standard BST functionality
 
 
 import random
@@ -154,21 +154,37 @@ class BST:
 
     def add(self, value: object) -> None:
         """
-        TODO: Write your implementation
+        Adds new value to proper location in BST.
         """
-        pass
+        self.recursive_add(value, self._root)
+
+    def recursive_add(self, value: object, curr_node: BSTNode) -> None:
+        """ Recursively adds new BSTNode to the tree."""
+        # base case #1: if tree is empty, make it the root and return
+        if self._root is None:
+            self._root = BSTNode(value)
+            return
+
+        # Base case #2: figure out whether to go left or right, if at bottom create new leaf
+        if value < curr_node.value:
+            next_node = curr_node.left
+            if next_node is None:
+                curr_node.left = BSTNode(value)
+                return
+        else:
+            next_node = curr_node.right
+            if next_node is None:
+                curr_node.right = BSTNode(value)
+                return
+
+        # recursive case: drill deeper into the BST.
+        self.recursive_add(value, next_node)
 
     def remove(self, value: object) -> bool:
         """
-        TODO: Write your implementation
+        Removes value from a tree, restructures the tree to preserve BST qualities
         """
         pass
-
-    # Consider implementing methods that handle different removal scenarios; #
-    # you may find that you're able to use some of them in the AVL.          #
-    # Remove these comments.                                                 #
-    # Remove these method stubs if you decide not to use them.               #
-    # Change these methods in any way you'd like.                            #
 
     def _remove_no_subtrees(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
         """
