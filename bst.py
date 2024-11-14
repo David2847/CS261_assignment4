@@ -8,6 +8,7 @@
 
 import random
 from queue_and_stack import Queue, Stack
+from typing import Union
 
 
 class BSTNode:
@@ -21,9 +22,9 @@ class BSTNode:
         Initialize a new BST node
         DO NOT CHANGE THIS METHOD IN ANY WAY
         """
-        self.value = value   # to store node's data
-        self.left = None     # pointer to root of left subtree
-        self.right = None    # pointer to root of right subtree
+        self.value = value  # to store node's data
+        self.left = None  # pointer to root of left subtree
+        self.right = None  # pointer to root of right subtree
 
     def __str__(self) -> str:
         """
@@ -180,49 +181,147 @@ class BST:
         # recursive case: drill deeper into the BST.
         self.recursive_add(value, next_node)
 
-    def get_node(self, value: object) -> BSTNode:
+    def get_node_and_parent(self, value: object) -> (BSTNode, BSTNode):
         """Finds and returns the node of a particular value (or None, if no such node exists)."""
-        return self.recursive_get_node(value, self._root)
+        return self.recursive_get_node_and_parent(value, self._root)
 
-    def recursive_get_node(self, value: object, curr_node: BSTNode) -> BSTNode:
-        """Recursively traverses tree to find desired node or None."""
-        # base case #1: root is empty
-        # base case #2: there's no node with this value -- return None
+    def recursive_get_node_and_parent(self, value: object, curr_node: Union[BSTNode, None]) -> (BSTNode, BSTNode):
+        """
+        Recursively traverses tree to find desired node
+        @:returns tuple with two BSTNodes in the order parent, child
+        """
+        # base case #1: there's no node with this value -- return None (and None for parent too)
+        #       This also covers the base case where the root is empty
+        if curr_node is None:
+            return None, None
+
+        # base case #2: root is the desired node, return it with no parent
+        if curr_node.value == value:
+            return None, curr_node
+
         # base case #3: found desired node, return it
-        # recursive case: dig deeper
+        if curr_node.left is not None and curr_node.left.value == value:
+            return curr_node, curr_node.left
+        if curr_node.right is not None and curr_node.right.value == value:
+            return curr_node, curr_node.right
+
+        if value < curr_node.value:
+            # recursion to the left to the left
+            return self.recursive_get_node_and_parent(value, curr_node.left)
+        else:
+            # recursion to the right subtree
+            return self.recursive_get_node_and_parent(value, curr_node.right)
 
     def remove(self, value: object) -> bool:
         """
         Removes value from a tree, restructures the tree to preserve BST qualities
         """
         # traverse down the tree until finding the node to remove
-        # check if there is a left subtree
-        # check if there is a right subtree
-        # handle the four cases accordingly -- it has zero, left, right, or both subtrees.
+        nodes = self.get_node_and_parent(value)
+        parent = nodes[0]
+        child = nodes[1]
+
+        # edge case: child doesn't exist (is None). removal failed, return False
+        if child is None:
+            return False
+
+        has_left_subtree = child.left is not None
+        has_right_subtree = child.right is not None
+
+        # handle the four cases -- it has zero, left, right, or both subtrees.
+        if has_left_subtree and has_right_subtree:
+            self._remove_two_subtrees(parent, child)
+        elif has_left_subtree and not has_right_subtree:
+            self._remove_one_subtree(parent, child)
+        elif not has_left_subtree and has_right_subtree:
+            self._remove_one_subtree(parent, child)
+        else:
+            self._remove_no_subtrees(parent, child)
+
+        return True
 
     def _remove_no_subtrees(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
         """
         Removes node that has no subtrees (no left or right nodes)
         """
-        pass
+        # edge case -- removing the root node. Can't alter a parent reference, so we just
+        #       have to empty the tree.
+        if remove_parent is None:
+            self.make_empty()
+            return
+
+        # check to see if remove node is left or right
+        if remove_parent.left == remove_node:
+            remove_parent.left = None
+        else:
+            remove_parent.right = None
 
     def _remove_one_subtree(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
         """
-        TODO: Write your implementation
+        Removes node that has one subtree, left or right
         """
-        # remove node that has a left or right subtree (only)
-        pass
+        # edge case -- remove_node is root. Promote its left or right child to become the new root
+        if remove_parent is None:
+            if remove_node.left is not None:
+                self._root = remove_node.left
+                return
+            else:
+                self._root = remove_node.right
+                return
+
+        # check to see if remove node is left or right and act accordingly... four cases:
+        #       remove left child of parent, promote left grandchild
+        #       remove left child of parent, promote right grandchild
+        #       remove right child of parent, promote left grandchild
+        #       remove right child of parent, promote right grandchild
+        if remove_parent.left == remove_node:
+            if remove_node.left is not None:
+                remove_parent.left = remove_node.left
+            else:
+                remove_parent.left = remove_node.right
+        else:
+            if remove_node.left is not None:
+                remove_parent.right = remove_node.left
+            else:
+                remove_parent.right = remove_node.right
 
     def _remove_two_subtrees(self, remove_parent: BSTNode, remove_node: BSTNode) -> None:
         """
-        TODO: Write your implementation
+        Removes a node that has two subtrees, replacing it with its inorder successor to preserve BST attributes.
         """
-        # remove node that has two subtrees
-        # need to find inorder successor and its parent (make a method!)
-        pass
+        inorder_parent, inorder_successor = self.get_inorder_successor_and_parent(remove_node)
 
-    def get_inorder_successor(self, curr: BSTNode) -> BSTNode:
-        pass
+        # if the inorder successor is not the immediate right child of remove_node, we have to:
+        #       make S's right child PS's left child
+        #       make N's right child S's right child
+        if inorder_parent != remove_node:
+            inorder_parent.left = inorder_successor.right
+            inorder_successor.right = remove_node.right
+
+        # Regardless of which descendant the inorder successor is, we need to:
+        #       make N's left child S's left child
+        #       make S become PN's left or right child, or make S into self._root
+        inorder_successor.left = remove_node.left
+        if remove_parent is None:
+            self._root = inorder_successor
+        elif remove_parent.left == remove_node:
+            remove_parent.left = inorder_successor
+        else:
+            remove_parent.right = inorder_successor
+
+    def get_inorder_successor_and_parent(self, curr: BSTNode) -> (BSTNode, BSTNode):
+        """Finds and returns the inorder successor and its parent of a given node."""
+        # edge case -- curr's right child is inorder successor.
+        if curr.right.left is None:
+            return curr, curr.right
+
+        # go right -- guaranteed to have at least one right descendant
+        curr = curr.right
+
+        # check to see if curr's leftmost grandchild is None, if it is we can return
+        while curr.left.left is not None:
+            curr = curr.left
+        return curr, curr.left
 
     def contains(self, value: object) -> bool:
         """
@@ -250,15 +349,15 @@ class BST:
 
     def is_empty(self) -> bool:
         """
-        TODO: Write your implementation
+        Returns True or False depending on if the tree is empty.
         """
-        pass
+        return self._root is None
 
     def make_empty(self) -> None:
         """
-        TODO: Write your implementation
+        Empties the tree.
         """
-        pass
+        self._root = None
 
 
 # ------------------- BASIC TESTING -----------------------------------------
@@ -329,6 +428,7 @@ if __name__ == '__main__':
     print("\nPDF - method remove() example 2")
     print("-------------------------------")
     test_cases = (
+        ((3, 2, 1), 1),
         ((50, 40, 60, 30, 70, 20, 80, 45), 20),
         ((50, 40, 60, 30, 70, 20, 80, 15), 40),
         ((50, 40, 60, 30, 70, 20, 80, 35), 20),
