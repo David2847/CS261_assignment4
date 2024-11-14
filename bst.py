@@ -325,15 +325,32 @@ class BST:
 
     def contains(self, value: object) -> bool:
         """
-        TODO: Write your implementation
+        returns true if value is in the tree, otherwise returns false
         """
-        pass
+        parent, child = self.recursive_get_node_and_parent(value, self._root)
+        return child is not None
 
     def inorder_traversal(self) -> Queue:
         """
-        TODO: Write your implementation
+        Traverses the tree and generates a Queue object that contains the values of the visited nodes in inorder fashion
         """
-        pass
+        items = Queue()
+        return self.rec_inorder_traversal(self._root, items)
+
+    def rec_inorder_traversal(self, curr: BSTNode, items: Queue) -> Queue:
+        """Recursive implementation of inorder_traversal"""
+        # base case #1: curr is None, just return
+        if curr is None:
+            return items
+
+        # recursive case #1: call on left child.
+        items = self.rec_inorder_traversal(curr.left, items)
+        # in between left and right, add current node to queue
+        items.enqueue(curr.value)
+        # recursive case #2: call on right child
+        items = self.rec_inorder_traversal(curr.right, items)
+
+        return items
 
     def find_min(self) -> object:
         """
