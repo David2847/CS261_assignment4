@@ -354,15 +354,41 @@ class BST:
 
     def find_min(self) -> object:
         """
-        TODO: Write your implementation
+        Finds and returns the minimum value in the tree.
         """
-        pass
+        # edge case -- tree is empty
+        if self.is_empty():
+            return None
+
+        return self._rec_find_min(self._root)
+
+    def _rec_find_min(self, curr: BSTNode) -> object:
+        """recursive implementation of find_min"""
+        # base case: found leftmost node, return it
+        if curr.left is None:
+            return curr.value
+
+        # recursive case: there's at least one more left child, keep going
+        return self._rec_find_min(curr.left)
 
     def find_max(self) -> object:
         """
-        TODO: Write your implementation
+        Finds and returns the maximum value in the tree.
         """
-        pass
+        # edge case -- tree is empty
+        if self.is_empty():
+            return None
+
+        return self._rec_find_max(self._root)
+
+    def _rec_find_max(self, curr: BSTNode) -> object:
+        """recursive implementation of find_max"""
+        # base case: found rightmost node, return it
+        if curr.right is None:
+            return curr.value
+
+        # recursive case: there's at least one more left child, keep going
+        return self._rec_find_max(curr.right)
 
     def is_empty(self) -> bool:
         """
