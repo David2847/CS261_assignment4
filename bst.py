@@ -157,9 +157,9 @@ class BST:
         """
         Adds new value to proper location in BST.
         """
-        self.recursive_add(value, self._root)
+        self._recursive_add(value, self._root)
 
-    def recursive_add(self, value: object, curr_node: BSTNode) -> None:
+    def _recursive_add(self, value: object, curr_node: BSTNode) -> None:
         """ Recursively adds new BSTNode to the tree."""
         # base case #1: if tree is empty, make it the root and return
         if self._root is None:
@@ -179,7 +179,7 @@ class BST:
                 return
 
         # recursive case: drill deeper into the BST.
-        self.recursive_add(value, next_node)
+        self._recursive_add(value, next_node)
 
     def get_node_and_parent(self, value: object) -> (BSTNode, BSTNode):
         """Finds and returns the node of a particular value (or None, if no such node exists)."""

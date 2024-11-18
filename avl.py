@@ -1,9 +1,9 @@
-# Name:
-# OSU Email:
+# Name: David Jantz
+# OSU Email: jantzd@oregonstate.edu
 # Course: CS261 - Data Structures
-# Assignment:
-# Due Date:
-# Description:
+# Assignment: BST / AVL Implementation
+# Due Date: 11/18/2024
+# Description: This is an implementation of an AVL tree with remove / add functionality.
 
 
 import random
@@ -101,15 +101,59 @@ class AVL(BST):
 
     def add(self, value: object) -> None:
         """
-        TODO: Write your implementation
+        Adds a value to the AVL tree and rebalances the tree as necessary.
         """
-        pass
+        # add leaf node using the same recursive process as in BST
+        curr_node = self._recursive_add(value, self._root)
+        # work back up the tree, updating heights and checking balance factors as we go
+        # while loop terminates when we step "above" the root node to a nonexistent parent
+        while curr_node is not None:
+            self._rebalance(curr_node)  # rebalance as necessary
+            curr_node = curr_node.parent
+        x = 1
+
+    def _recursive_add(self, value: object, curr_node: AVLNode) -> AVLNode | None:
+        """
+        Recursively adds new AVLNode to the tree.
+        This method is exactly the same as _recursive_add in BST class with four differences:
+        1. BSTNodes are replaced with AVLNodes
+        2. It returns a reference to the node that was added to give a starting point for rebalancing.
+        3. It updates the parent reference for the inserted node.
+        4. It disallows duplicate values to be added to the tree.
+        """
+        # base case #1: if tree is empty, make it the root and return
+        if self._root is None:
+            self._root = AVLNode(value)
+            return self._root
+
+        # Base case #2: figure out whether to go left or right, if at bottom create new leaf
+        if value < curr_node.value:
+            next_node = curr_node.left
+            if next_node is None:
+                curr_node.left = AVLNode(value)
+                curr_node.left.parent = curr_node  # doubly linked reference chain
+                return curr_node.left
+        elif value > curr_node.value:
+            next_node = curr_node.right
+            if next_node is None:
+                curr_node.right = AVLNode(value)
+                curr_node.right.parent = curr_node
+                return curr_node.right
+        else:
+            return None  # no duplicate values allowed... if equivalent value is discovered, do nothing
+
+        # recursive case: drill deeper into the BST.
+        return self._recursive_add(value, next_node)
 
     def remove(self, value: object) -> bool:
         """
         TODO: Write your implementation
         """
+        # remove node using normal BST removal (replace with inorder successor)
+        #if super().remove(value):
         pass
+            # update heights
+            # rebalance
 
     # Experiment and see if you can use the optional                         #
     # subtree removal methods defined in the BST here in the AVL.            #
@@ -125,47 +169,129 @@ class AVL(BST):
         """
         pass
 
-    # It's highly recommended to implement                          #
-    # the following methods for balancing the AVL Tree.             #
-    # Remove these comments.                                        #
-    # Remove these method stubs if you decide not to use them.      #
-    # Change these methods in any way you'd like.                   #
-
     def _balance_factor(self, node: AVLNode) -> int:
         """
-        TODO: Write your implementation
+        Determines the balance factor of a given AVLNode.
         """
-        pass
+        return self._get_height(node.right) - self._get_height(node.left)
 
     def _get_height(self, node: AVLNode) -> int:
         """
-        TODO: Write your implementation
+        Returns the height of desired node or -1 if the node doesn't exist.
         """
-        pass
+        if node is None:
+            return -1
+        return node.height
 
     def _rotate_left(self, node: AVLNode) -> AVLNode:
         """
-        TODO: Write your implementation
+        Performs a left rotation, centered on node
         """
-        pass
+        former_parent = node.parent  # Could be None
+        former_right_child = node.right  # Can't be none since we are performing a left rotation
+        former_RL_grandchild = node.right.left  # Could be None
+
+        is_left_child = False
+        is_right_child = False
+        # check if node is parent's left child, right child, or if node is root
+        if node == self._root:
+            pass # avoid error of trying to access the child of None
+        elif node == former_parent.left:
+            is_left_child = True
+        else:
+            is_right_child = True
+
+        # former right child gets node's parent as its parent
+        former_right_child.parent = former_parent
+        # former right child's new parent gets former right child as its right or left child or we make former right
+        # child the new root
+        if is_left_child:
+            former_parent.left = former_right_child
+        elif is_right_child:
+            former_parent.right = former_right_child
+        else:
+            self._root = former_right_child
+
+        # node gets its right child's left child as node's new right child even if it's None
+        node.right = former_RL_grandchild
+        if former_RL_grandchild is not None:
+            # node's new right child gets node as its parent
+            former_RL_grandchild.parent = node
+
+        # node gets its former right child as its parent
+        node.parent = former_right_child
+        # right child gets node as its left child
+        former_right_child.left = node
 
     def _rotate_right(self, node: AVLNode) -> AVLNode:
         """
-        TODO: Write your implementation
+        Performs a right rotation, centered on node
         """
-        pass
+        former_parent = node.parent  # Could be None
+        former_left_child = node.left  # Can't be none since we are performing a left rotation
+        former_LR_grandchild = node.left.right  # Could be None
+
+        is_left_child = False
+        is_right_child = False
+        # check if node is parent's left child, right child, or if node is root
+        if node == self._root:
+            pass  # avoid error of trying to access the child of None
+        elif node == former_parent.left:
+            is_left_child = True
+        else:
+            is_right_child = True
+
+        # former left child gets node's parent as its parent
+        former_left_child.parent = former_parent
+        # former left child's new parent gets former left child as its right or left child or we make former left
+        # child the new root
+        if is_left_child:
+            former_parent.left = former_left_child
+        elif is_right_child:
+            former_parent.right = former_left_child
+        else:
+            self._root = former_left_child
+
+        # node gets its former left child's right child as node's new left child even if it's None
+        node.left = former_LR_grandchild
+        if former_LR_grandchild is not None:
+            # node's new right child gets node as its parent
+            former_LR_grandchild.parent = node
+
+        # node gets its former right child as its parent
+        node.parent = former_left_child
+        # right child gets node as its left child
+        former_left_child.right = node
 
     def _update_height(self, node: AVLNode) -> None:
         """
-        TODO: Write your implementation
+        updates the height of a given node.
         """
-        pass
+        node.height = 1 + max(self._get_height(node.left), self._get_height(node.right))
 
     def _rebalance(self, node: AVLNode) -> None:
         """
-        TODO: Write your implementation
+        Rebalances the tree by performing necessary rotations centered at given node
         """
-        pass
+        # if unbalanced left
+        if self._balance_factor(node) < -1:
+            # if left child is unbalanced right
+            if self._balance_factor(node.left) > 0:
+                # rotate left child to the left (handles L-R imbalance)
+                self._rotate_left(node.left)
+                self._update_height(node.left.left)
+            # rotate N right (handles L-L imbalance)
+            self._rotate_right(node)
+        # if unbalanced right:
+        elif self._balance_factor(node) > 1:
+            # if right child is unbalanced left
+            if self._balance_factor(node.right) < 0:
+                # rotate right child to the right (handles R-L imbalance)
+                self._rotate_right(node.right)
+                self._update_height(node.right.right)
+            # rotate N left (handles R-R imbalance)
+            self._rotate_left(node)
+        self._update_height(node)
 
 # ------------------- BASIC TESTING -----------------------------------------
 
@@ -184,6 +310,8 @@ if __name__ == '__main__':
         tree = AVL(case)
         print(tree)
         tree.print_tree()
+        if not tree.is_valid_avl():
+            raise Exception("PROBLEM WITH ADD OPERATION")
 
     print("\nPDF - method add() example 2")
     print("----------------------------")
